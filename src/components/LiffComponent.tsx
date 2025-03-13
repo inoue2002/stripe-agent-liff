@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import liff from '@line/liff';
 import { LiffMockPlugin } from '@line/liff-mock';
+import ChatComponent from './ChatComponent';
 
 export default function LiffComponent() {
   const [profile, setProfile] = useState<{
@@ -75,6 +76,7 @@ export default function LiffComponent() {
           <p>タイムスタンプ: {apiData.timestamp}</p>
         </div>
       )}
+      <ChatComponent />
     </div>
   );
 }
