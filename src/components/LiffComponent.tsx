@@ -10,6 +10,10 @@ export default function LiffComponent() {
     pictureUrl?: string;
     statusMessage?: string;
   } | null>(null);
+  const [apiData, setApiData] = useState<{
+    message: string;
+    timestamp: string;
+  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -24,10 +28,21 @@ export default function LiffComponent() {
           // @ts-expect-error
           mock: process.env.NODE_ENV === 'development',
         });
-        if (!liff.isInClient()) liff.login();
+        if (!liff.isInClient()) {
+          liff.login();
+        }
 
-        const userProfile = await liff.getProfile();
+        const [userProfile, apiResponse] = await Promise.all([
+          liff.getProfile(),
+          fetch('/api/hello')
+            .then((res) => res.json())
+            .catch((err) => {
+              console.error('APIレスポンスの取得に失敗しました', err);
+              return null;
+            }),
+        ]);
         setProfile(userProfile);
+        setApiData(apiResponse);
       } catch (err) {
         setError('LIFFの初期化に失敗しました');
         console.error(err);
@@ -53,6 +68,13 @@ export default function LiffComponent() {
         <p className="font-bold">名前: {profile.displayName}</p>
         {profile.statusMessage && <p>ステータスメッセージ: {profile.statusMessage}</p>}
       </div>
+      {apiData && (
+        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
+          <h2 className="text-xl font-bold mb-2">APIレスポンス</h2>
+          <p>メッセージ: {apiData.message}</p>
+          <p>タイムスタンプ: {apiData.timestamp}</p>
+        </div>
+      )}
     </div>
   );
 }
