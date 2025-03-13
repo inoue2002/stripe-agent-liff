@@ -44,9 +44,6 @@ if (!process.env.OPENAI_API_KEY) {
 
 export async function GET() {
   try {
-    console.log('--------------------------------');
-    console.log(stripeAgentToolkit.getTools());
-    console.log('--------------------------------');
     const response = await fetch('https://api.openai.com/v1/realtime/sessions', {
       method: 'POST',
       headers: {
@@ -55,7 +52,7 @@ export async function GET() {
       },
       body: JSON.stringify({
         model: 'gpt-4o-realtime-preview-2024-12-17',
-        voice: 'verse',
+        voice: 'ash',
         modalities: ['text', 'audio'],
         input_audio_format: 'pcm16',
         output_audio_format: 'pcm16',
