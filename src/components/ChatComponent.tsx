@@ -118,7 +118,21 @@ export default function ChatComponent() {
   return (
     <div className="flex flex-col h-[600px]">
       <audio ref={audioRef} className="hidden" />
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 flex flex-col items-center justify-center p-4">
+        <div className="relative w-64 h-64 mb-8">
+          <img
+            src="/sample.jpg"
+            alt="AI Assistant"
+            className="w-full h-full rounded-full object-cover border-4 border-blue-500 shadow-lg"
+          />
+          {isConnected ? (
+            <div className="absolute bottom-4 right-4 w-6 h-6 bg-green-500 rounded-full border-2 border-white" />
+          ) : (
+            <div className="absolute bottom-4 right-4 w-6 h-6 bg-red-500 rounded-full border-2 border-white" />
+          )}
+        </div>
+      </div>
+      <div className="h-48 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg, index) => (
           <div
             key={index}
@@ -136,7 +150,7 @@ export default function ChatComponent() {
           </div>
         ))}
       </div>
-      <div className="border-t p-4 bg-white">
+      <div className="border-t p-4 bg-white shadow-lg">
         <form onSubmit={sendMessage} className="flex gap-2">
           <input
             type="text"
