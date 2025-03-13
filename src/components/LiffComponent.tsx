@@ -11,10 +11,6 @@ export default function LiffComponent() {
     pictureUrl?: string;
     statusMessage?: string;
   } | null>(null);
-  const [apiData, setApiData] = useState<{
-    message: string;
-    timestamp: string;
-  } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -33,17 +29,8 @@ export default function LiffComponent() {
           liff.login();
         }
 
-        const [userProfile, apiResponse] = await Promise.all([
-          liff.getProfile(),
-          fetch('/api/hello')
-            .then((res) => res.json())
-            .catch((err) => {
-              console.error('APIレスポンスの取得に失敗しました', err);
-              return null;
-            }),
-        ]);
+        const userProfile = await liff.getProfile();
         setProfile(userProfile);
-        setApiData(apiResponse);
       } catch (err) {
         setError('LIFFの初期化に失敗しました');
         console.error(err);
@@ -62,21 +49,23 @@ export default function LiffComponent() {
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">LINEプロフィール</h1>
-      <div className="space-y-2">
-        {profile.pictureUrl && <img src={profile.pictureUrl} alt="Profile" className="w-24 h-24 rounded-full" />}
-        <p className="font-bold">名前: {profile.displayName}</p>
-        {profile.statusMessage && <p>ステータスメッセージ: {profile.statusMessage}</p>}
-      </div>
-      {apiData && (
-        <div className="mt-8 p-4 bg-gray-100 rounded-lg">
-          <h2 className="text-xl font-bold mb-2">APIレスポンス</h2>
-          <p>メッセージ: {apiData.message}</p>
-          <p>タイムスタンプ: {apiData.timestamp}</p>
+    <div className="min-h-screen bg-gray-100">
+      <div className="max-w-2xl mx-auto py-8 px-4">
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="p-4 bg-blue-600 text-white flex items-center space-x-4">
+            <img
+              src="/sample.jpg"
+              alt="AI Assistant"
+              className="w-12 h-12 rounded-full border-2 border-white"
+            />
+            <div>
+              <h1 className="text-xl font-bold">カフェアシスタント</h1>
+              <p className="text-sm opacity-80">いらっしゃいませ！ご注文をお伺いします</p>
+            </div>
+          </div>
+          <ChatComponent />
         </div>
-      )}
-      <ChatComponent />
+      </div>
     </div>
   );
 }

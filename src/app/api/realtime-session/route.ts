@@ -3,7 +3,7 @@ import { StripeAgentToolkit } from '@stripe/agent-toolkit/openai';
 import { ChatCompletionTool } from 'openai/resources/chat';
 
 // ツールをフラットな構造に変換する関数
-function flattenTools(tools: ChatCompletionTool[]): Array<{ function: { name: string, description: string, parameters: object } }> {
+function flattenTools(tools: ChatCompletionTool[]): Array<{ type: string, name: string, description: string, parameters: object }> {
   return tools.map((tool) => {
     // descriptionがundefinedの場合は空文字列を設定
     const description = tool.function.description || '';
@@ -12,11 +12,11 @@ function flattenTools(tools: ChatCompletionTool[]): Array<{ function: { name: st
     const parameters = tool.function.parameters || {};
     
     return {
-      function: {
+      type: 'function',
         name: tool.function.name,
         description: description,
         parameters: parameters,
-      }
+      
     };
   });
 }

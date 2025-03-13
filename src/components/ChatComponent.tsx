@@ -116,40 +116,49 @@ export default function ChatComponent() {
   };
 
   return (
-    <div className="mt-8 p-4 bg-white rounded-lg shadow">
+    <div className="flex flex-col h-[600px]">
       <audio ref={audioRef} className="hidden" />
-      <h2 className="text-xl font-bold mb-4">AIチャット</h2>
-      <div className="h-64 overflow-y-auto mb-4 p-4 border rounded">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`mb-2 p-2 rounded ${
-              msg.isAi ? 'bg-blue-100 ml-auto' : 'bg-gray-100'
-            }`}
+            className={`flex ${msg.isAi ? 'justify-start' : 'justify-end'}`}
           >
-            {msg.text}
+            <div
+              className={`max-w-[80%] rounded-lg p-3 ${
+                msg.isAi
+                  ? 'bg-blue-100 rounded-tl-none'
+                  : 'bg-green-100 rounded-tr-none'
+              }`}
+            >
+              <p className="text-gray-800">{msg.text}</p>
+            </div>
           </div>
         ))}
       </div>
-      <form onSubmit={sendMessage} className="flex gap-2">
-        <input
-          type="text"
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          className="flex-1 p-2 border rounded"
-          placeholder="メッセージを入力..."
-        />
-        <button
-          type="submit"
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          disabled={!isConnected}
-        >
-          送信
-        </button>
-      </form>
-      {!isConnected && (
-        <p className="text-red-500 mt-2">サーバーに接続できません</p>
-      )}
+      <div className="border-t p-4 bg-white">
+        <form onSubmit={sendMessage} className="flex gap-2">
+          <input
+            type="text"
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            className="flex-1 p-3 border rounded-full bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="メッセージを入力..."
+          />
+          <button
+            type="submit"
+            className="px-6 py-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!isConnected}
+          >
+            送信
+          </button>
+        </form>
+        {!isConnected && (
+          <p className="text-red-500 text-sm mt-2 text-center">
+            サーバーに接続できません
+          </p>
+        )}
+      </div>
     </div>
   );
 }
