@@ -1,14 +1,24 @@
 import { NextResponse } from 'next/server';
 import { StripeAgentToolkit } from '@stripe/agent-toolkit/openai';
+import { ChatCompletionTool } from 'openai/resources/chat';
 
 // ツールをフラットな構造に変換する関数
-function flattenTools(tools: Array<{function: {name: string, description: string, parameters: object}}>) {
-  return tools.map((tool) => ({
-    type: 'function',
-    name: tool.function.name,
-    description: tool.function.description,
-    parameters: tool.function.parameters,
-  }));
+function flattenTools(tools: ChatCompletionTool[]): Array<{ function: { name: string, description: string, parameters: object } }> {
+  return tools.map((tool) => {
+    // descriptionがundefinedの場合は空文字列を設定
+    const description = tool.function.description || '';
+    
+    // parametersがundefinedの場合は空のオブジェクトを設定
+    const parameters = tool.function.parameters || {};
+    
+    return {
+      function: {
+        name: tool.function.name,
+        description: description,
+        parameters: parameters,
+      }
+    };
+  });
 }
 
 const stripeAgentToolkit = new StripeAgentToolkit({
