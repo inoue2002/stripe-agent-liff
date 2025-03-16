@@ -5,9 +5,18 @@ export default function ChatComponent() {
   const peerConnection = useRef<RTCPeerConnection | null>(null);
   const dataChannel = useRef<RTCDataChannel | null>(null);
   const [message, setMessage] = useState('');
-  const [messages, setMessages] = useState<Array<{ text: string; isAi: boolean }>>([]);
+  const [messages, setMessages] = useState<Array<{ text: string; isAi: boolean; isComplete?: boolean }>>([]);
   const [isConnected, setIsConnected] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
 
   useEffect(() => {
     const initWebRTC = async () => {
@@ -54,12 +63,82 @@ export default function ChatComponent() {
         dc.addEventListener('message', async (e) => {
           const realtimeEvent = JSON.parse(e.data);
           console.log('Received event:', realtimeEvent);
-
-          if (realtimeEvent.type === 'text.content') {
-            setMessages(prev => [...prev, { text: realtimeEvent.text, isAi: true }]);
+          if (realtimeEvent.type === 'response.text.delta') {
+            // 文字起こしのテキストを追加
+            setMessages(prev => {
+              const lastMessage = prev[prev.length - 1];
+              if (lastMessage && lastMessage.isAi && !lastMessage.isComplete) {
+                // 既存のメッセージを更新
+                const newMessages = [...prev];
+                newMessages[prev.length - 1] = {
+                  ...lastMessage,
+                  text: lastMessage.text + realtimeEvent.text
+                };
+                return newMessages;
+              } else {
+                // 新しいメッセージを作成
+                return [...prev, { text: realtimeEvent.text, isAi: true, isComplete: false }];
+              }
+            });
+          } else if (realtimeEvent.type === 'response.text.done') {
+            // メッセージを完了状態にする
+            setMessages(prev => {
+              const newMessages = [...prev];
+              if (newMessages.length > 0) {
+                newMessages[newMessages.length - 1] = {
+                  ...newMessages[newMessages.length - 1],
+                  isComplete: true
+                };
+              }
+              return newMessages;
+            });
           } else if (realtimeEvent.type === 'function.call') {
-            console.log('Function call received:', realtimeEvent);
-            // 関数呼び出しは一旦ログだけ出力
+            try {
+              const response = await fetch('/api/handle-function-call', {
+                method: 'POST',
+                headers: {
+                  'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(realtimeEvent),
+              });
+              
+              if (!response.ok) {
+                throw new Error('Failed to handle function call');
+              }
+
+              const result = await response.json();
+              console.log('Function call result:', result);
+
+              // 結果をAIに返す
+              if (dataChannel.current?.readyState === 'open') {
+                const resultEvent = {
+                  type: 'function.result',
+                  function: {
+                    name: realtimeEvent.function.name,
+                    result
+                  }
+                };
+                dataChannel.current.send(JSON.stringify(resultEvent));
+              }
+
+              // 結果をメッセージとして表示
+              setMessages(prev => [...prev, { 
+                text: `Function ${realtimeEvent.function.name} executed: ${JSON.stringify(result, null, 2)}`, 
+                isAi: true 
+              }]);
+            } catch (error) {
+              console.error('Error handling function call:', error);
+              if (dataChannel.current?.readyState === 'open') {
+                const errorEvent = {
+                  type: 'function.error',
+                  function: {
+                    name: realtimeEvent.function.name,
+                    error: 'Failed to execute function'
+                  }
+                };
+                dataChannel.current.send(JSON.stringify(errorEvent));
+              }
+            }
           }
         });
 
@@ -98,18 +177,24 @@ export default function ChatComponent() {
 
     initWebRTC();
   }, []);
-
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (message.trim() && dataChannel.current?.readyState === 'open') {
       const event = {
-        type: 'response.create',
-        response: {
-          modalities: ['text'],
-          instructions: message,
-        },
+        type: "conversation.item.create",
+        item: {
+          type: "message",
+          role: "user",
+          content: [
+            {
+              type: "input_text",
+              text: message,
+            }
+          ]
+        }
       };
       dataChannel.current.send(JSON.stringify(event));
+
       setMessages(prev => [...prev, { text: message, isAi: false }]);
       setMessage('');
     }
@@ -119,36 +204,37 @@ export default function ChatComponent() {
     <div className="flex flex-col h-[600px]">
       <audio ref={audioRef} className="hidden" />
       <div className="flex-1 flex flex-col items-center justify-center p-4">
-        <div className="relative w-64 h-64 mb-8">
+        <div className="relative w-32 h-32 mb-4">
           <img
             src="/sample.jpg"
             alt="AI Assistant"
             className="w-full h-full rounded-full object-cover border-4 border-blue-500 shadow-lg"
           />
           {isConnected ? (
-            <div className="absolute bottom-4 right-4 w-6 h-6 bg-green-500 rounded-full border-2 border-white" />
+            <div className="absolute bottom-2 right-2 w-4 h-4 bg-green-500 rounded-full border-2 border-white" />
           ) : (
-            <div className="absolute bottom-4 right-4 w-6 h-6 bg-red-500 rounded-full border-2 border-white" />
+            <div className="absolute bottom-2 right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white" />
           )}
         </div>
       </div>
-      <div className="h-48 overflow-y-auto p-4 space-y-4 bg-gray-50">
+      <div className="h-64 overflow-y-auto p-4 space-y-4 bg-gray-50">
         {messages.map((msg, index) => (
           <div
             key={index}
-            className={`flex ${msg.isAi ? 'justify-start' : 'justify-end'}`}
+            className={`flex ${msg.isAi ? 'justify-end' : 'justify-start'}`}
           >
             <div
               className={`max-w-[80%] rounded-lg p-3 ${
                 msg.isAi
-                  ? 'bg-blue-100 rounded-tl-none'
-                  : 'bg-green-100 rounded-tr-none'
+                  ? `bg-blue-500 text-white rounded-tr-none ${!msg.isComplete ? 'animate-pulse' : ''}`
+                  : 'bg-gray-100 rounded-tl-none'
               }`}
             >
-              <p className="text-gray-800">{msg.text}</p>
+              <p className={msg.isAi ? 'text-white' : 'text-gray-800'}>{msg.text}</p>
             </div>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="border-t p-4 bg-white shadow-lg">
         <form onSubmit={sendMessage} className="flex gap-2">

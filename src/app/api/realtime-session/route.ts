@@ -5,12 +5,8 @@ import { ChatCompletionTool } from 'openai/resources/chat';
 // ツールをフラットな構造に変換する関数
 function flattenTools(tools: ChatCompletionTool[]): Array<{ type: string, name: string, description: string, parameters: object }> {
   return tools.map((tool) => {
-    // descriptionがundefinedの場合は空文字列を設定
     const description = tool.function.description || '';
-    
-    // parametersがundefinedの場合は空のオブジェクトを設定
     const parameters = tool.function.parameters || {};
-    
     return {
       type: 'function',
         name: tool.function.name,
@@ -28,12 +24,12 @@ const stripeAgentToolkit = new StripeAgentToolkit({
       paymentLinks: {
         create: true,
       },
-      products: {
-        create: true,
-      },
-      prices: {
-        create: true,
-      },
+      // products: {
+      //   create: true,
+      // },
+      // prices: {
+      //   create: true,
+      // },
     },
   },
 });
