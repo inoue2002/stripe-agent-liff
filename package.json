@@ -9,8 +9,8 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@line/liff": "^2.25.1",
-    "@line/liff-mock": "^1.0.3",
+    "@line/liff": "^2.31.2",
+    "@line/liff-mock": "^1.1.0",
     "@modelcontextprotocol/sdk": "^1.7.0",
     "@stripe/agent-toolkit": "^0.5.1",
     "@stripe/stripe-js": "^6.0.0",
